@@ -133,7 +133,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
         <dt>短期雜訊</dt><dd>單日股價漲跌、情緒性報導，不需要因此改變配置。</dd>
         <dt>上游／下游／競爭者</dt><dd>供應原料或設備給它的是上游，買它產品的是下游，搶同一塊市場的是競爭者。</dd>
         <dt>目標比例與偏離</dt><dd>目標比例是你理想中每檔佔多少；偏離是現在的比例和目標差幾個百分點。</dd>
-        <dt>再平衡</dt><dd>比例走樣時把它拉回目標。這裡只用每月新資金補不足的，不會叫你賣出。</dd>
+        <dt>再平衡</dt><dd>比例走樣時把它拉回目標。這裡只提醒你偏離了，不會叫你賣出，要不要調整目標由你決定。</dd>
       </dl>
     </details>
   </div>
@@ -141,10 +141,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
   <div class="bar">
     <label>每月定期定額（NT$）<input type="number" id="monthly" min="0" step="500"></label>
     <label>再平衡門檻（偏離幾個百分點才調整）<input type="number" id="threshold" min="1" max="30" step="1"></label>
-    <label>統計期間：起<input type="date" id="rFrom"></label>
-    <label>統計期間：迄<input type="date" id="rTo"></label>
-    <label>快速選擇統計期間（只有期間內的新聞會影響建議）
-      <span class="chips" id="presets"><button class="chip" data-p="7">近 7 天</button><button class="chip" data-p="30">近 30 天</button><button class="chip" data-p="m">本月</button><button class="chip" data-p="all">全部</button></span></label>
+    <label>新聞統計期間<span class="hint" style="padding:7px 10px">固定看最近 7 天（每週使用一次）</span></label>
     <button class="ghost" id="resetDemo">還原範例資料</button>
   </div>
 
@@ -164,7 +161,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
       <h2>目前持股與目標比例</h2>
       <p class="sub">這是「我自己的 ETF」：只放我理解、願意長期追蹤的公司。市值與報酬率由你手動填寫（範例數字為虛構）。</p>
       <div class="tablewrap"><table>
-        <thead><tr><th>名稱</th><th>代號</th><th>所屬產業</th><th>目前市值 NT$</th><th>報酬率 %</th><th>目標比例 %</th><th>現比例</th><th></th></tr></thead>
+        <thead><tr><th>名稱</th><th>代號</th><th>所屬產業</th><th>新聞搜尋關鍵字（英文）</th><th>目前市值 NT$</th><th>報酬率 %</th><th>目標比例 %</th><th>現比例</th><th></th></tr></thead>
         <tbody id="hBody"></tbody>
       </table></div>
       <div class="row"><button id="addH">＋ 新增持股</button><button class="ghost" id="normT">目標比例正規化為 100%</button><button class="ghost" id="clearH">清空持股</button><span id="tSum"></span></div>
@@ -174,12 +171,23 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
 
   <!-- 2 事件 -->
   <section class="tab" id="t2">
-    <div class="guide"><b>這一頁要做什麼：</b>看到和持股有關的新聞，就記一筆並下判斷。<b>先看最上面的「重點」</b>，它告訴你這些新聞目前怎麼改變配置；要新增新聞往下捲，不確定怎麼填就按「填入範例」。</div>
+    <div class="guide"><b>這一頁要做什麼：</b>看到和持股有關的新聞，就記一筆並下判斷。<b>先看最上面的「重點」</b>，它告訴你這些新聞目前怎麼改變配置；要新增新聞：用下面的「搜尋新聞」找，或自己手動輸入；不確定怎麼填就按「填入範例」。</div>
     <div class="card" id="impactCard">
       <h2>重點：這些新聞目前怎麼影響你的配置</h2>
-      <p class="sub">只計算「統計期間」內的事件。「目標微調」是指這檔本月想要的比例，會比你設定的目標多（或少）幾個百分點。</p>
+      <p class="sub">只計算最近 7 天內的事件。「目標微調」是指這檔本月想要的比例，會比你設定的目標多（或少）幾個百分點。</p>
       <div id="impact"></div>
       <div class="row"><button class="ghost" id="toAlloc">看本月配置建議 →</button></div>
+    </div>
+    <div class="card" id="newsCard">
+      <h2>搜尋最近 7 天的新聞</h2>
+      <p class="sub">選一檔持股，網站幫你到公開新聞資料庫（GDELT，以英文新聞為主）查最近一週的報導。看到有關的就按「加入事件」，再自己判斷是長期利多、短期雜訊還是長期利空。</p>
+      <div class="toolbar">
+        <select id="nStock"></select>
+        <input type="search" id="nKw" placeholder="搜尋關鍵字（英文）">
+        <button id="nGo">搜尋新聞</button>
+      </div>
+      <div class="cnt" id="nMsg" style="margin-bottom:8px"></div>
+      <div id="nList"></div>
     </div>
     <div class="card">
       <h2>記錄一則新聞事件</h2>
@@ -203,14 +211,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
     </div>
     <div class="card">
       <h2>事件清單</h2>
-      <p class="sub">灰色代表不在統計期間內，不會影響本月配置。</p>
-      <div class="toolbar">
-        <input type="search" id="eSearch" placeholder="搜尋標題、公司、原因或持股名稱">
-        <span class="chips" id="eFilter">
-          <button class="chip on" data-v="all">全部</button><button class="chip" data-v="bull">長期利多</button><button class="chip" data-v="noise">短期雜訊</button><button class="chip" data-v="bear">長期利空</button><button class="chip" data-v="in">只看統計期間內</button>
-        </span>
-        <span class="cnt" id="eCount"></span>
-      </div>
+      <p class="sub">灰色代表已超過 7 天，不會影響本月配置。</p>
       <div id="eList"></div>
     </div>
     <div class="card">
@@ -225,8 +226,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
     <div class="guide"><b>這一頁要做什麼：</b>這頁不用填，看「本月扣款」那欄就是這個月每檔該投入的百分比與金額。滿意就按下方「儲存」，之後到第 5 頁記錄你有沒有採納。</div>
     <div class="card">
       <h2>本月扣款配置建議</h2>
-      <p class="sub">邏輯：目標比例 ＋ 統計期間內的事件微調（長期利多加碼、利空減碼，最多 ±6 個百分點）→ 只用新資金補不足的部分，不賣出，避免過度交易。</p>
-      <div class="toolbar"><span class="cnt">排序：</span><span class="chips" id="aSort"><button class="chip on" data-s="orig">依持股順序</button><button class="chip" data-s="pct">扣款比例高到低</button></span></div>
+      <p class="sub">邏輯：你設定的目標比例 ＋ 最近 7 天事件的微調（長期利多加碼、利空減碼，最多 ±6 個百分點）＝ 本月扣款比例。每月照比例定期定額，不賣出，避免過度交易。</p>
       <div id="allocNote"></div>
       <div class="tablewrap"><table>
         <thead><tr><th>持股</th><th>現比例</th><th>調整後目標</th><th>偏離</th><th>本月扣款</th><th>金額 NT$</th><th>較上月</th><th>理由</th></tr></thead>
@@ -236,7 +236,7 @@ details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
     </div>
     <div class="card">
       <h2>再平衡原則（讓建議有依據）</h2>
-      <p class="sub" style="margin:0">① 每季檢視一次，平常只做定期定額，不看短期漲跌。② 偏離目標超過門檻（預設 5 個百分點）才視為需要調整。③ 優先用新資金補不足的持股，超配的持股本月暫停加碼，而不是賣出。④ 事件只做小幅微調，避免被新聞標題牽著走。</p>
+      <p class="sub" style="margin:0">① 每季檢視一次，平常只做定期定額，不看短期漲跌。② 偏離目標超過門檻（預設 5 個百分點）才視為需要調整。③ 偏離只用來提醒你，不會自動改變扣款比例；真的偏離太多時，由你決定是否調整目標比例。④ 事件只做小幅微調，避免被新聞標題牽著走。</p>
     </div>
   </section>
 
@@ -287,6 +287,7 @@ function demo(){
     {id:'h3',name:'聯發科',ticker:'2454',industry:'IC 設計',value:60000,ret:6.5,target:15},
     {id:'h4',name:'鴻海',ticker:'2317',industry:'電子代工',value:40000,ret:-2.1,target:15}
   ];
+  const KW={h1:'TSMC',h2:'NVIDIA',h3:'MediaTek',h4:'Foxconn'};H.forEach(h=>h.kw=KW[h.id]);
   const d=new Date(); d.setMonth(d.getMonth()-1);
   return {
     monthly:20000, threshold:5,
@@ -309,7 +310,7 @@ function load(){
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 let state=load();
-const ui={q:'',v:'all',inOnly:false,sort:'orig'};
+state.range={from:daysAgo(6),to:daysAgo(0)};
 
 /* ---------- 計算核心 ---------- */
 function inRange(e){return e.date>=state.range.from&&e.date<=state.range.to}
@@ -327,13 +328,8 @@ function compute(){
   rows.forEach(r=>r.raw=Math.max(0,r.base+r.tilt));
   const rs=rows.reduce((a,r)=>a+r.raw,0)||1;
   rows.forEach(r=>{r.adj=r.raw/rs*100;r.drift=r.cur-r.adj});
-  // 只用新資金補不足
-  const total=V+M;
-  rows.forEach(r=>{r.need=Math.max(0,r.adj/100*total-num(r.h.value))});
-  const S=rows.reduce((a,r)=>a+r.need,0);
-  rows.forEach(r=>{r.amt=M<=0?0:(S>=M?r.need/S*M:r.need+(M-S)*r.adj/100)});
-  // 最大餘數法，讓百分比加總剛好 100
-  let pc=rows.map(r=>M>0?r.amt/M*100:0),fl=pc.map(Math.floor),left=(M>0?100:0)-fl.reduce((a,b)=>a+b,0);
+  // 依調整後目標比例分配，並用最大餘數法讓百分比加總剛好 100
+  let pc=rows.map(r=>r.adj),fl=pc.map(Math.floor),left=(rows.length?100:0)-fl.reduce((a,b)=>a+b,0);
   pc.map((p,i)=>({i,f:p-Math.floor(p)})).sort((a,b)=>b.f-a.f).slice(0,Math.max(0,left)).forEach(o=>fl[o.i]++);
   rows.forEach((r,i)=>{r.pct=fl[i];r.money=M*fl[i]/100});
   // 上個月
@@ -347,12 +343,11 @@ function compute(){
     if(bull)p.push(bull+' 則長期利多');
     if(bear)p.push(bear+' 則長期利空');
     let t=p.length?'期間有'+p.join('、')+'，目標微調 '+(r.tilt>=0?'+':'')+r.tilt.toFixed(1)+' 點；':'';
-    if(r.drift<-thr)t+='低於目標 '+Math.abs(r.drift).toFixed(1)+' 點，優先補足';
-    else if(r.drift>thr)t+='高於目標 '+r.drift.toFixed(1)+' 點，本月縮減加碼';
-    else t+='偏離在 ±'+thr+' 點內，大致依目標比例';
+    if(Math.abs(r.drift)>thr)t+='目前'+(r.drift>0?'高':'低')+'於目標 '+Math.abs(r.drift).toFixed(1)+' 點，建議這一季檢視是否調整目標';
+    else t+='目前與目標差距在 ±'+thr+' 點內，依目標比例扣款';
     r.reason=t;
   });
-  return {rows,V,M,thr,evs,prev,S};
+  return {rows,V,M,thr,evs,prev};
 }
 function watchlist(evs){
   const H=state.holdings,map={};
@@ -376,17 +371,21 @@ function renderHoldings(){
     '<td><input data-f="name" value="'+esc(h.name)+'"></td>'+
     '<td><input data-f="ticker" value="'+esc(h.ticker)+'" style="max-width:90px"></td>'+
     '<td><input data-f="industry" value="'+esc(h.industry)+'"></td>'+
+    '<td><input data-f="kw" value="'+esc(h.kw||'')+'" placeholder="例：TSMC"></td>'+
     '<td><input type="number" data-f="value" min="0" step="1000" value="'+num(h.value)+'"></td>'+
     '<td><input type="number" data-f="ret" step="0.1" value="'+num(h.ret)+'"></td>'+
     '<td><input type="number" data-f="target" min="0" max="100" step="1" value="'+num(h.target)+'"></td>'+
     '<td data-cur></td>'+
     '<td><button class="danger" data-del>刪除</button></td></tr>'
-  ).join('')||'<tr><td colspan="8" class="flat">還沒有持股，請按「新增持股」。</td></tr>';
+  ).join('')||'<tr><td colspan="9" class="flat">還沒有持股，請按「新增持股」。</td></tr>';
 }
 function renderStockSelect(){
   const sel=$('#eStock'),old=sel.value;
   sel.innerHTML=state.holdings.map(h=>'<option value="'+h.id+'">'+esc(h.name)+'</option>').join('');
   if(state.holdings.some(h=>h.id===old))sel.value=old;
+  const ns=$('#nStock'),nold=ns.value;
+  ns.innerHTML=sel.innerHTML;
+  if(state.holdings.some(h=>h.id===nold))ns.value=nold;
 }
 function renderAll(){
   const C=compute();
@@ -405,13 +404,7 @@ function renderAll(){
     '<div class="stat"><b>'+state.holdings.length+' 檔</b><span>持股數</span></div>';
   // 事件
   const evAll=state.events.slice().sort((a,b)=>a.date<b.date?1:-1);
-  const q=ui.q.trim().toLowerCase();
-  const ev=evAll.filter(e=>{
-    const hh=state.holdings.find(x=>x.id===e.stock);
-    const text=(e.title+' '+e.company+' '+e.reason+' '+(hh?hh.name:'')).toLowerCase();
-    return (!q||text.includes(q))&&(ui.v==='all'||e.verd===ui.v)&&(!ui.inOnly||inRange(e));
-  });
-  $('#eCount').textContent='顯示 '+ev.length+' / '+evAll.length+' 則';
+  const ev=evAll;
   $('#impact').innerHTML=C.rows.map(r=>{
     const n=v=>r.mine.filter(e=>e.verd===v).length;
     const cls=r.tilt>0?'up':r.tilt<0?'down':'flat';
@@ -433,7 +426,7 @@ function renderAll(){
   const over=C.rows.filter(r=>Math.abs(r.drift)>C.thr);
   note.push(over.length?'<div class="warn">有 '+over.length+' 檔偏離目標超過 '+C.thr+' 個百分點：'+over.map(r=>esc(r.h.name)).join('、')+'。建議這一季檢視一次是否調整目標。</div>':'<div class="ok">所有持股都在 ±'+C.thr+' 個百分點內，維持定期定額即可，不需要大動作。</div>');
   $('#allocNote').innerHTML=note.join('');
-  $('#aBody').innerHTML=(ui.sort==='pct'?C.rows.slice().sort((a,b)=>b.pct-a.pct):C.rows).map(r=>{
+  $('#aBody').innerHTML=C.rows.map(r=>{
     const d=r.delta==null?'<span class="flat">—</span>':r.delta>0?'<span class="up">+'+r.delta+'%</span>':r.delta<0?'<span class="down">'+r.delta+'%</span>':'<span class="flat">0%</span>';
     return '<tr><td><b>'+esc(r.h.name)+'</b><br><small class="flat">'+esc(r.h.ticker)+'</small></td>'+
       '<td>'+r.cur.toFixed(1)+'%</td><td>'+r.adj.toFixed(1)+'%</td>'+
@@ -508,8 +501,6 @@ $('#nav').addEventListener('click',e=>{
 });
 $('#monthly').addEventListener('input',e=>{state.monthly=num(e.target.value);renderAll()});
 $('#threshold').addEventListener('input',e=>{state.threshold=num(e.target.value);renderAll()});
-$('#rFrom').addEventListener('change',e=>{state.range.from=e.target.value||state.range.from;renderAll()});
-$('#rTo').addEventListener('change',e=>{state.range.to=e.target.value||state.range.to;renderAll()});
 $('#resetDemo').addEventListener('click',()=>{state=demo();init()});
 $('#hBody').addEventListener('input',e=>{
   const tr=e.target.closest('tr[data-id]');if(!tr||!e.target.dataset.f)return;
@@ -524,7 +515,7 @@ $('#hBody').addEventListener('click',e=>{
   renderHoldings();renderStockSelect();renderAll();
 });
 $('#addH').addEventListener('click',()=>{
-  state.holdings.push({id:uid(),name:'新持股',ticker:'',industry:'',value:0,ret:0,target:0});
+  state.holdings.push({id:uid(),name:'新持股',ticker:'',industry:'',kw:'',value:0,ret:0,target:0});
   renderHoldings();renderStockSelect();renderAll();
 });
 $('#normT').addEventListener('click',()=>{
@@ -590,24 +581,48 @@ $('#clearH').addEventListener('click',()=>{
   if(!confirm('確定要清空所有持股嗎？'))return;
   state.holdings=[];renderHoldings();renderStockSelect();renderAll();
 });
-$('#presets').addEventListener('click',e=>{
-  const b=e.target.closest('[data-p]');if(!b)return;
-  const p=b.dataset.p,t=new Date();let from;
-  if(p==='7')from=daysAgo(6);else if(p==='30')from=daysAgo(29);
-  else if(p==='m')from=ymd(new Date(t.getFullYear(),t.getMonth(),1));else from='2000-01-01';
-  state.range={from,to:daysAgo(0)};
-  $('#rFrom').value=from;$('#rTo').value=state.range.to;renderAll();
+/* ---------- 新聞搜尋（GDELT 公開 API，不需金鑰） ---------- */
+let newsRes=[],nBusy=false;
+const kwOf=h=>(h&&(h.kw||h.ticker||h.name))||'';
+const fmtD=s=>s?(s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8)):'';
+function syncKw(){const h=state.holdings.find(x=>x.id===$('#nStock').value);$('#nKw').value=kwOf(h)}
+function renderNews(){
+  $('#nList').innerHTML=newsRes.map((a,i)=>{
+    const href=/^https?:\/\//.test(a.url||'')?a.url:'#';
+    return '<div class="ev"><div><div class="t"><a href="'+esc(href)+'" target="_blank" rel="noopener">'+esc(a.title)+'</a></div>'+
+      '<small>'+esc(a.domain||'')+'｜'+esc(fmtD(a.seendate))+'</small></div>'+
+      '<button class="ghost" data-addnews="'+i+'">加入事件</button></div>';
+  }).join('');
+}
+$('#nStock').addEventListener('change',syncKw);
+$('#nGo').addEventListener('click',async()=>{
+  if(nBusy)return;
+  const kw=$('#nKw').value.trim();
+  if(!kw){$('#nMsg').textContent='請先輸入關鍵字（英文效果較好）。';return}
+  nBusy=true;$('#nGo').disabled=true;$('#nMsg').textContent='搜尋中⋯⋯';$('#nList').innerHTML='';
+  try{
+    const url='https://api.gdeltproject.org/api/v2/doc/doc?query='+encodeURIComponent('"'+kw+'" sourcelang:english')+'&mode=artlist&maxrecords=12&timespan=7d&sort=datedesc&format=json';
+    const r=await fetch(url);const t=await r.text();
+    let j;try{j=JSON.parse(t)}catch(e){throw new Error('rate')}
+    const seen={};
+    newsRes=(j.articles||[]).filter(a=>a.title&&!seen[a.title]&&(seen[a.title]=1));
+    renderNews();
+    $('#nMsg').textContent=newsRes.length?('找到 '+newsRes.length+' 則最近 7 天的新聞，看到有關的就按「加入事件」。'):'最近 7 天沒有找到相關新聞，可以換個關鍵字，或手動輸入事件。';
+  }catch(err){
+    $('#nMsg').textContent=err.message==='rate'?'新聞服務要求稍等幾秒再搜尋，請稍後重試。':'目前無法連線到新聞服務，請稍後再試，或手動輸入事件。';
+  }
+  setTimeout(()=>{nBusy=false;$('#nGo').disabled=false},5000);
 });
-$('#eSearch').addEventListener('input',e=>{ui.q=e.target.value;renderAll()});
-$('#eFilter').addEventListener('click',e=>{
-  const b=e.target.closest('[data-v]');if(!b)return;
-  if(b.dataset.v==='in'){ui.inOnly=!ui.inOnly;b.classList.toggle('on',ui.inOnly)}
-  else{ui.v=b.dataset.v;document.querySelectorAll('#eFilter [data-v]:not([data-v=in])').forEach(x=>x.classList.toggle('on',x===b))}
-  renderAll();
-});
-$('#aSort').addEventListener('click',e=>{
-  const b=e.target.closest('[data-s]');if(!b)return;
-  ui.sort=b.dataset.s;document.querySelectorAll('#aSort [data-s]').forEach(x=>x.classList.toggle('on',x===b));renderAll();
+$('#nList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-addnews]');if(!b)return;
+  const a=newsRes[+b.dataset.addnews];if(!a)return;
+  const h=state.holdings.find(x=>x.id===$('#nStock').value);
+  $('#eTitle').value=a.title;$('#eCompany').value=h?h.name:'';
+  $('#eStock').value=$('#nStock').value;$('#eRel').value='self';$('#eVerd').value='noise';
+  $('#eDate').value=fmtD(a.seendate)||ymd(new Date());$('#eReason').value='';
+  updHint();
+  $('#nMsg').textContent='已帶入下方表單：請選擇你的判斷、寫一句原因，再按「加入事件」。';
+  $('#eTitle').scrollIntoView({behavior:'smooth',block:'center'});$('#eReason').focus();
 });
 function updHint(){
   const w={self:1,up:.6,down:.6,comp:.6}[$('#eRel').value],s={bull:1,noise:0,bear:-1}[$('#eVerd').value];
@@ -635,10 +650,8 @@ function init(){
   $('#intro').hidden=hid;$('#showIntro').hidden=!hid;
   $('#monthly').value=state.monthly;
   $('#threshold').value=state.threshold;
-  $('#rFrom').value=state.range.from;
-  $('#rTo').value=state.range.to;
   $('#eDate').value=ymd(new Date());
-  renderHoldings();renderStockSelect();renderAll();updHint();
+  renderHoldings();renderStockSelect();syncKw();renderAll();updHint();
 }
 init();
 })();
