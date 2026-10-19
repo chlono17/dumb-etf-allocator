@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>呆萌 ETF 配置助理</title>
+<style>
+:root{
+  --bg:#f4f1ea; --card:#ffffff; --ink:#1f2a37; --muted:#6b7280; --line:#e5e1d8;
+  --brand:#2f5d8a; --brand-soft:#e6eef6; --bull:#1f8a5b; --bull-soft:#e2f4ea;
+  --bear:#c0392b; --bear-soft:#fbe7e4; --noise:#8a8f98; --noise-soft:#eceef1;
+  --accent:#f29f3d; --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.55}
+header{background:linear-gradient(135deg,#25435f,#2f5d8a);color:#fff;padding:18px 16px}
+.wrap{max-width:1080px;margin:0 auto}
+.head{display:flex;gap:16px;align-items:center}
+.head svg{flex:0 0 76px;width:76px;height:76px}
+.head h1{margin:0;font-size:1.35rem}
+.bubble{background:#fff;color:var(--ink);border-radius:14px;padding:8px 12px;margin-top:8px;font-size:.92rem;position:relative;display:inline-block;max-width:640px}
+.bubble:before{content:"";position:absolute;left:-8px;top:14px;border:8px solid transparent;border-right-color:#fff;border-left:0}
+main{max-width:1080px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.bar label{display:flex;flex-direction:column;font-size:.8rem;color:var(--muted);gap:3px}
+input,select,button,textarea{font:inherit}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+button{border:0;border-radius:8px;padding:8px 14px;background:var(--brand);color:#fff;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:var(--brand-soft);color:var(--brand)}
+button.danger{background:var(--bear-soft);color:var(--bear);padding:5px 10px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+nav button{background:#fff;color:var(--ink);border:1px solid var(--line)}
+nav button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:1.08rem}
+.sub{color:var(--muted);font-size:.86rem;margin:0 0 12px}
+section.tab{display:none}
+section.tab.on{display:block}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:7px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:.9rem;vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+td input{width:100%}
+td input[type=number]{max-width:110px}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:600}
+.tag.bull{background:var(--bull-soft);color:var(--bull)}
+.tag.bear{background:var(--bear-soft);color:var(--bear)}
+.tag.noise{background:var(--noise-soft);color:var(--noise)}
+.tag.rel{background:var(--brand-soft);color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.form label{display:flex;flex-direction:column;font-size:.8rem;color:var(--muted);gap:3px}
+.form .wide{grid-column:1/-1}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:1.2rem}
+.stat span{color:var(--muted);font-size:.8rem}
+.meter{height:12px;background:var(--noise-soft);border-radius:99px;overflow:hidden;min-width:90px}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.up{color:var(--bull);font-weight:600}.down{color:var(--bear);font-weight:600}.flat{color:var(--muted)}
+.warn{background:#fff6e5;border:1px solid #f3d9a4;color:#8a5a00;border-radius:10px;padding:8px 12px;font-size:.86rem;margin:8px 0}
+.ok{background:var(--bull-soft);border:1px solid #b8e0c9;color:var(--bull);border-radius:10px;padding:8px 12px;font-size:.86rem;margin:8px 0}
+pre{background:#1f2a37;color:#eef2f6;padding:14px;border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:.88rem;margin:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.dim{opacity:.45}
+.ev{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.ev .t{font-weight:600}
+.ev small{color:var(--muted)}
+.hist{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.hist .r{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.hist .r input[type=text]{flex:1;min-width:200px}
+footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);font-size:.8rem}
+@media(max-width:600px){.head h1{font-size:1.1rem}.head svg{flex-basis:56px;width:56px;height:56px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap head">
+    <svg viewBox="0 0 100 100" aria-label="呆萌企鵝">
+      <ellipse cx="50" cy="94" rx="26" ry="4" fill="#00000030"/>
+      <ellipse cx="50" cy="56" rx="30" ry="36" fill="#1d2733"/>
+      <ellipse cx="50" cy="63" rx="20" ry="26" fill="#fff"/>
+      <circle cx="40" cy="38" r="5.5" fill="#fff"/><circle cx="60" cy="38" r="5.5" fill="#fff"/>
+      <circle cx="41" cy="39" r="2.6" fill="#1d2733"/><circle cx="59" cy="39" r="2.6" fill="#1d2733"/>
+      <path d="M43 47 Q50 55 57 47 Q50 44 43 47Z" fill="#f29f3d"/>
+      <ellipse cx="35" cy="92" rx="9" ry="4" fill="#f29f3d"/><ellipse cx="65" cy="92" rx="9" ry="4" fill="#f29f3d"/>
+      <path d="M21 52 Q10 66 20 78 Q24 66 25 56Z" fill="#1d2733"/><path d="M79 52 Q90 66 80 78 Q76 66 75 56Z" fill="#1d2733"/>
+    </svg>
+    <div>
+      <h1>呆萌 ETF 配置助理</h1>
+      <div class="bubble" id="bubble">呆呆地幫你看新聞與配置中⋯⋯</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="bar">
+    <label>每月定期定額（NT$）<input type="number" id="monthly" min="0" step="500"></label>
+    <label>再平衡門檻（偏離幾個百分點才調整）<input type="number" id="threshold" min="1" max="30" step="1"></label>
+    <label>統計期間：起<input type="date" id="rFrom"></label>
+    <label>統計期間：迄<input type="date" id="rTo"></label>
+    <button class="ghost" id="resetDemo">還原範例資料</button>
+  </div>
+
+  <nav id="nav">
+    <button data-tab="t1" class="on">1 持股設定</button>
+    <button data-tab="t2">2 新聞事件</button>
+    <button data-tab="t3">3 本月配置建議</button>
+    <button data-tab="t4">4 每週週報</button>
+    <button data-tab="t5">5 採納紀錄與偏好</button>
+  </nav>
+
+  <!-- 1 持股 -->
+  <section class="tab on" id="t1">
+    <div class="card">
+      <h2>目前持股與目標比例</h2>
+      <p class="sub">這是「我自己的 ETF」：只放我理解、願意長期追蹤的公司。市值與報酬率由你手動填寫（範例數字為虛構）。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>名稱</th><th>代號</th><th>所屬產業</th><th>目前市值 NT$</th><th>報酬率 %</th><th>目標比例 %</th><th>現比例</th><th></th></tr></thead>
+        <tbody id="hBody"></tbody>
+      </table></div>
+      <div class="row"><button id="addH">＋ 新增持股</button><button class="ghost" id="normT">目標比例正規化為 100%</button><span id="tSum"></span></div>
+      <div class="grid" id="stats"></div>
+    </div>
+  </section>
+
+  <!-- 2 事件 -->
+  <section class="tab" id="t2">
+    <div class="card">
+      <h2>記錄一則新聞事件</h2>
+      <p class="sub">把新聞貼進來，標示它和哪檔持股有關、關係是什麼，再判斷是長期利多、短期雜訊還是長期利空。判斷由你決定，系統只負責整理與計分。</p>
+      <div class="form">
+        <label>日期<input type="date" id="eDate"></label>
+        <label>新聞標題<input type="text" id="eTitle" placeholder="例：先進製程新廠動土"></label>
+        <label>新聞中的公司<input type="text" id="eCompany" placeholder="例：艾司摩爾"></label>
+        <label>影響哪一檔持股<select id="eStock"></select></label>
+        <label>該公司與持股的關係<select id="eRel">
+          <option value="self">本身</option><option value="up">上游</option><option value="down">下游</option><option value="comp">競爭者</option></select></label>
+        <label>長期判斷<select id="eVerd">
+          <option value="bull">長期利多</option><option value="noise" selected>短期雜訊</option><option value="bear">長期利空</option></select></label>
+        <label class="wide">一句話原因<input type="text" id="eReason" placeholder="例：擴產屬於未來三年產能決策，不是單日股價波動"></label>
+        <div class="wide"><button id="addE">加入事件</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>事件清單</h2>
+      <p class="sub">灰色代表不在目前統計期間內，不會影響本月配置。</p>
+      <div id="eList"></div>
+    </div>
+    <div class="card">
+      <h2>建議加入追蹤名單</h2>
+      <p class="sub">新聞中出現、但還不在持股裡的公司，並標示它和現有持股的關係。</p>
+      <div id="watch"></div>
+    </div>
+  </section>
+
+  <!-- 3 配置 -->
+  <section class="tab" id="t3">
+    <div class="card">
+      <h2>本月扣款配置建議</h2>
+      <p class="sub">邏輯：目標比例 ＋ 統計期間內的事件微調（長期利多加碼、利空減碼，最多 ±6 個百分點）→ 只用新資金補不足的部分，不賣出，避免過度交易。</p>
+      <div id="allocNote"></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>持股</th><th>現比例</th><th>調整後目標</th><th>偏離</th><th>本月扣款</th><th>金額 NT$</th><th>較上月</th><th>理由</th></tr></thead>
+        <tbody id="aBody"></tbody>
+      </table></div>
+      <div class="row"><button id="saveM">儲存本月建議到紀錄</button><span class="sub" id="saveMsg" style="margin:0"></span></div>
+    </div>
+    <div class="card">
+      <h2>再平衡原則（讓建議有依據）</h2>
+      <p class="sub" style="margin:0">① 每季檢視一次，平常只做定期定額，不看短期漲跌。② 偏離目標超過門檻（預設 5 個百分點）才視為需要調整。③ 優先用新資金補不足的持股，超配的持股本月暫停加碼，而不是賣出。④ 事件只做小幅微調，避免被新聞標題牽著走。</p>
+    </div>
+  </section>
+
+  <!-- 4 週報 -->
+  <section class="tab" id="t4">
+    <div class="card">
+      <h2>每週產業週報（純文字，可貼到 LINE）</h2>
+      <p class="sub">內容依統計期間內的事件、本月配置建議與追蹤名單自動整理。</p>
+      <div class="row"><button id="copyR">複製週報文字</button><span class="sub" id="copyMsg" style="margin:0"></span></div>
+      <pre id="report"></pre>
+    </div>
+  </section>
+
+  <!-- 5 紀錄 -->
+  <section class="tab" id="t5">
+    <div class="card">
+      <h2>採納紀錄</h2>
+      <p class="sub">每個月記錄這份建議我採不採納，並寫下理由，讓助理慢慢學會我的偏好。</p>
+      <div id="prefs"></div>
+      <div id="hist"></div>
+    </div>
+  </section>
+</main>
+<footer>本頁為課堂作業的個人記錄與練習工具，範例數字皆為虛構，不構成任何投資建議。資料只存在你自己瀏覽器的 localStorage。</footer>
+
+<script>
+(function(){
+'use strict';
+const KEY='dumb-etf-v1';
+const REL={self:{label:'本身',w:1},up:{label:'上游',w:.6},down:{label:'下游',w:.6},comp:{label:'競爭者',w:.6}};
+const VERD={bull:{label:'長期利多',s:1},noise:{label:'短期雜訊',s:0},bear:{label:'長期利空',s:-1}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const uid=()=>'i'+Math.random().toString(36).slice(2,9);
+const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return ymd(d)};
+const thisMonth=()=>ymd(new Date()).slice(0,7);
+
+function demo(){
+  const H=[
+    {id:'h1',name:'台積電',ticker:'2330',industry:'半導體製造',value:320000,ret:28.4,target:40},
+    {id:'h2',name:'NVIDIA',ticker:'NVDA',industry:'AI 晶片設計',value:180000,ret:41.2,target:30},
+    {id:'h3',name:'聯發科',ticker:'2454',industry:'IC 設計',value:60000,ret:6.5,target:15},
+    {id:'h4',name:'鴻海',ticker:'2317',industry:'電子代工',value:40000,ret:-2.1,target:15}
+  ];
+  const d=new Date(); d.setMonth(d.getMonth()-1);
+  return {
+    monthly:20000, threshold:5,
+    range:{from:daysAgo(6),to:daysAgo(0)},
+    holdings:H,
+    events:[
+      {id:uid(),date:daysAgo(1),title:'宣布擴建先進封裝產能',company:'台積電',stock:'h1',rel:'self',verd:'bull',reason:'擴產是未來數年的產能決策，屬長期影響'},
+      {id:uid(),date:daysAgo(3),title:'曝光機供應商訂單能見度提高',company:'艾司摩爾',stock:'h1',rel:'up',verd:'bull',reason:'上游設備訂單增加，代表先進製程需求延續'},
+      {id:uid(),date:daysAgo(4),title:'單週股價回檔 4%',company:'NVIDIA',stock:'h2',rel:'self',verd:'noise',reason:'沒有基本面改變，只是市場情緒'},
+      {id:uid(),date:daysAgo(5),title:'競爭對手發表自研 AI 加速器',company:'Broadcom',stock:'h2',rel:'comp',verd:'bear',reason:'客製化晶片可能分食資料中心長期需求'}
+    ],
+    history:[
+      {month:ymd(d).slice(0,7),alloc:{h1:35,h2:30,h3:20,h4:15},adopted:true,reason:'比例合理，照做'}
+    ]
+  };
+}
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.holdings)return s}}catch(e){}
+  return demo();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+let state=load();
+
+/* ---------- 計算核心 ---------- */
+function inRange(e){return e.date>=state.range.from&&e.date<=state.range.to}
+function compute(){
+  const H=state.holdings,V=H.reduce((a,h)=>a+num(h.value),0),M=Math.max(0,num(state.monthly));
+  const thr=Math.max(1,num(state.threshold));
+  const tsum=H.reduce((a,h)=>a+Math.max(0,num(h.target)),0)||1;
+  const evs=state.events.filter(inRange);
+  let rows=H.map(h=>{
+    const mine=evs.filter(e=>e.stock===h.id);
+    const score=mine.reduce((a,e)=>a+VERD[e.verd].s*REL[e.rel].w,0);
+    const tilt=clamp(score*2,-6,6);
+    return {h,mine,score,tilt,base:Math.max(0,num(h.target))/tsum*100,cur:V>0?num(h.value)/V*100:0};
+  });
+  rows.forEach(r=>r.raw=Math.max(0,r.base+r.tilt));
+  const rs=rows.reduce((a,r)=>a+r.raw,0)||1;
+  rows.forEach(r=>{r.adj=r.raw/rs*100;r.drift=r.cur-r.adj});
+  // 只用新資金補不足
+  const total=V+M;
+  rows.forEach(r=>{r.need=Math.max(0,r.adj/100*total-num(r.h.value))});
+  const S=rows.reduce((a,r)=>a+r.need,0);
+  rows.forEach(r=>{r.amt=M<=0?0:(S>=M?r.need/S*M:r.need+(M-S)*r.adj/100)});
+  // 最大餘數法，讓百分比加總剛好 100
+  let pc=rows.map(r=>M>0?r.amt/M*100:0),fl=pc.map(Math.floor),left=(M>0?100:0)-fl.reduce((a,b)=>a+b,0);
+  pc.map((p,i)=>({i,f:p-Math.floor(p)})).sort((a,b)=>b.f-a.f).slice(0,Math.max(0,left)).forEach(o=>fl[o.i]++);
+  rows.forEach((r,i)=>{r.pct=fl[i];r.money=M*fl[i]/100});
+  // 上個月
+  const cm=thisMonth();
+  const prev=state.history.filter(x=>x.month<cm).sort((a,b)=>a.month<b.month?1:-1)[0]||null;
+  rows.forEach(r=>{
+    r.prev=prev&&prev.alloc[r.h.id]!=null?prev.alloc[r.h.id]:null;
+    r.delta=r.prev==null?null:r.pct-r.prev;
+    const p=[];
+    const bull=r.mine.filter(e=>e.verd==='bull').length,bear=r.mine.filter(e=>e.verd==='bear').length;
+    if(bull)p.push(bull+' 則長期利多');
+    if(bear)p.push(bear+' 則長期利空');
+    let t=p.length?'期間有'+p.join('、')+'，目標微調 '+(r.tilt>=0?'+':'')+r.tilt.toFixed(1)+' 點；':'';
+    if(r.drift<-thr)t+='低於目標 '+Math.abs(r.drift).toFixed(1)+' 點，優先補足';
+    else if(r.drift>thr)t+='高於目標 '+r.drift.toFixed(1)+' 點，本月縮減加碼';
+    else t+='偏離在 ±'+thr+' 點內，大致依目標比例';
+    r.reason=t;
+  });
+  return {rows,V,M,thr,evs,prev,S};
+}
+function watchlist(evs){
+  const H=state.holdings,map={};
+  evs.forEach(e=>{
+    const c=(e.company||'').trim();if(!c)return;
+    const known=H.some(h=>h.name.toLowerCase()===c.toLowerCase()||h.ticker.toLowerCase()===c.toLowerCase());
+    if(known)return;
+    const h=H.find(x=>x.id===e.stock);
+    const m=map[c]=map[c]||{company:c,links:{},bull:0,bear:0,n:0};
+    m.links[(h?h.name:'?')+'（'+REL[e.rel].label+'）']=1;
+    m.n++; if(e.verd==='bull')m.bull++; if(e.verd==='bear')m.bear++;
+  });
+  return Object.values(map).sort((a,b)=>b.n-a.n);
+}
+
+/* ---------- 畫面 ---------- */
+function tag(v){const c=v==='bull'?'bull':v==='bear'?'bear':'noise';return '<span class="tag '+c+'">'+VERD[v].label+'</span>'}
+function renderHoldings(){
+  $('#hBody').innerHTML=state.holdings.map(h=>
+    '<tr data-id="'+h.id+'">'+
+    '<td><input data-f="name" value="'+esc(h.name)+'"></td>'+
+    '<td><input data-f="ticker" value="'+esc(h.ticker)+'" style="max-width:90px"></td>'+
+    '<td><input data-f="industry" value="'+esc(h.industry)+'"></td>'+
+    '<td><input type="number" data-f="value" min="0" step="1000" value="'+num(h.value)+'"></td>'+
+    '<td><input type="number" data-f="ret" step="0.1" value="'+num(h.ret)+'"></td>'+
+    '<td><input type="number" data-f="target" min="0" max="100" step="1" value="'+num(h.target)+'"></td>'+
+    '<td data-cur></td>'+
+    '<td><button class="danger" data-del>刪除</button></td></tr>'
+  ).join('')||'<tr><td colspan="8" class="flat">還沒有持股，請按「新增持股」。</td></tr>';
+}
+function renderStockSelect(){
+  const sel=$('#eStock'),old=sel.value;
+  sel.innerHTML=state.holdings.map(h=>'<option value="'+h.id+'">'+esc(h.name)+'</option>').join('');
+  if(state.holdings.some(h=>h.id===old))sel.value=old;
+}
+function renderAll(){
+  const C=compute();
+  // 持股頁
+  document.querySelectorAll('#hBody tr[data-id]').forEach(tr=>{
+    const r=C.rows.find(x=>x.h.id===tr.dataset.id);
+    const td=tr.querySelector('[data-cur]');if(td&&r)td.textContent=r.cur.toFixed(1)+'%';
+  });
+  const tsum=state.holdings.reduce((a,h)=>a+num(h.target),0);
+  $('#tSum').innerHTML=Math.round(tsum*10)/10===100?'<span class="up">目標比例合計 100%</span>':'<span class="down">目標比例合計 '+(Math.round(tsum*10)/10)+'%（會自動換算成 100%）</span>';
+  const wRet=C.V>0?C.rows.reduce((a,r)=>a+num(r.h.ret)*r.cur/100,0):0;
+  $('#stats').innerHTML=
+    '<div class="stat"><b>NT$ '+fmt(C.V)+'</b><span>目前總市值</span></div>'+
+    '<div class="stat"><b>NT$ '+fmt(C.M)+'</b><span>每月定期定額</span></div>'+
+    '<div class="stat"><b>'+(wRet>=0?'+':'')+wRet.toFixed(1)+'%</b><span>加權報酬率</span></div>'+
+    '<div class="stat"><b>'+state.holdings.length+' 檔</b><span>持股數</span></div>';
+  // 事件
+  const ev=state.events.slice().sort((a,b)=>a.date<b.date?1:-1);
+  $('#eList').innerHTML=ev.map(e=>{
+    const h=state.holdings.find(x=>x.id===e.stock);
+    return '<div class="ev'+(inRange(e)?'':' dim')+'"><div><div class="t">'+tag(e.verd)+' '+esc(e.title)+'</div>'+
+      '<small>'+esc(e.date)+'｜'+esc(e.company||'—')+' → '+esc(h?h.name:'（已刪除持股）')+' <span class="tag rel">'+REL[e.rel].label+'</span></small><div>'+esc(e.reason)+'</div></div>'+
+      '<button class="danger" data-delE="'+e.id+'">刪除</button></div>';
+  }).join('')||'<p class="flat">還沒有事件。</p>';
+  const W=watchlist(C.evs);
+  $('#watch').innerHTML=W.length?W.map(w=>'<div class="ev"><div><div class="t">'+esc(w.company)+'</div><small>與 '+esc(Object.keys(w.links).join('、'))+' 有關｜期間出現 '+w.n+' 次（利多 '+w.bull+'、利空 '+w.bear+'）</small></div></div>').join(''):'<p class="flat">目前期間內沒有新的公司需要追蹤。</p>';
+  // 配置
+  const note=[];
+  if(C.M<=0)note.push('<div class="warn">請先在上方輸入每月定期定額金額。</div>');
+  if(!state.holdings.length)note.push('<div class="warn">請先新增持股。</div>');
+  const over=C.rows.filter(r=>Math.abs(r.drift)>C.thr);
+  note.push(over.length?'<div class="warn">有 '+over.length+' 檔偏離目標超過 '+C.thr+' 個百分點：'+over.map(r=>esc(r.h.name)).join('、')+'。建議這一季檢視一次是否調整目標。</div>':'<div class="ok">所有持股都在 ±'+C.thr+' 個百分點內，維持定期定額即可，不需要大動作。</div>');
+  $('#allocNote').innerHTML=note.join('');
+  $('#aBody').innerHTML=C.rows.map(r=>{
+    const d=r.delta==null?'<span class="flat">—</span>':r.delta>0?'<span class="up">+'+r.delta+'%</span>':r.delta<0?'<span class="down">'+r.delta+'%</span>':'<span class="flat">0%</span>';
+    return '<tr><td><b>'+esc(r.h.name)+'</b><br><small class="flat">'+esc(r.h.ticker)+'</small></td>'+
+      '<td>'+r.cur.toFixed(1)+'%</td><td>'+r.adj.toFixed(1)+'%</td>'+
+      '<td class="'+(Math.abs(r.drift)>C.thr?'down':'flat')+'">'+(r.drift>=0?'+':'')+r.drift.toFixed(1)+'</td>'+
+      '<td style="min-width:130px"><b>'+r.pct+'%</b><div class="meter"><i style="width:'+r.pct+'%"></i></div></td>'+
+      '<td>'+fmt(r.money)+'</td><td>'+d+'</td><td style="min-width:200px;font-size:.84rem">'+esc(r.reason)+'</td></tr>';
+  }).join('');
+  // 週報
+  $('#report').textContent=buildReport(C);
+  // 紀錄
+  renderHist();
+  // 氣泡
+  const top=C.rows.slice().sort((a,b)=>b.pct-a.pct)[0];
+  $('#bubble').textContent=!top||C.M<=0?'先告訴我每月要投入多少錢，呆呆才會算～':
+    '這個月呆呆想多買一點「'+top.h.name+'」（'+top.pct+'%）。期間共看了 '+C.evs.length+' 則新聞，'+(over.length?'有 '+over.length+' 檔偏離比較多喔！':'目前比例都很乖。');
+  save();
+}
+function buildReport(C){
+  const f=s=>s.replace(/-/g,'/');
+  const L=[];
+  L.push('【呆萌週報】'+f(state.range.from)+'–'+f(state.range.to));
+  L.push('');
+  L.push('■ 持股相關事件（'+C.evs.length+' 則）');
+  if(!C.evs.length)L.push('本期間沒有記錄新事件。');
+  C.evs.slice().sort((a,b)=>a.date<b.date?1:-1).forEach((e,i)=>{
+    const h=state.holdings.find(x=>x.id===e.stock);
+    L.push((i+1)+'. ['+VERD[e.verd].label+'] '+(h?h.name:'?')+'｜'+e.title+'（'+(e.company||'—')+'，'+REL[e.rel].label+'）');
+    L.push('   原因：'+e.reason);
+  });
+  L.push('');
+  L.push('■ 本月配置建議（每月 NT$'+fmt(C.M)+'）');
+  C.rows.forEach(r=>{
+    const d=r.delta==null?'無上月資料':'較上月 '+(r.delta>0?'+':'')+r.delta+'%';
+    L.push('- '+r.h.name+' '+r.pct+'%（NT$'+fmt(r.money)+'，'+d+'）');
+    L.push('  '+r.reason);
+  });
+  const W=watchlist(C.evs);
+  L.push('');
+  L.push('■ 建議加入追蹤');
+  if(!W.length)L.push('本期間沒有新公司。');
+  W.forEach(w=>L.push('- '+w.company+'：與 '+Object.keys(w.links).join('、')+' 有關'));
+  L.push('');
+  L.push('※ 個人記錄與練習用途，非投資建議。');
+  return L.join('\n');
+}
+function renderHist(){
+  const hs=state.history.slice().sort((a,b)=>a.month<b.month?1:-1);
+  const done=hs.filter(x=>x.adopted!==null&&x.adopted!==undefined);
+  const yes=done.filter(x=>x.adopted).length;
+  const no=done.filter(x=>!x.adopted&&x.reason);
+  let p='<div class="grid" style="margin-bottom:12px"><div class="stat"><b>'+hs.length+' 筆</b><span>已儲存的月份建議</span></div>'+
+    '<div class="stat"><b>'+(done.length?Math.round(yes/done.length*100)+'%':'—')+'</b><span>採納率</span></div></div>';
+  if(no.length)p+='<div class="warn"><b>呆呆記下的偏好：</b><br>'+no.slice(0,5).map(x=>esc(x.month)+' 不採納：'+esc(x.reason)).join('<br>')+'</div>';
+  $('#prefs').innerHTML=p;
+  $('#hist').innerHTML=hs.map(x=>{
+    const al=Object.keys(x.alloc).map(id=>{const h=state.holdings.find(y=>y.id===id);return h?esc(h.name)+' '+x.alloc[id]+'%':null}).filter(Boolean).join('、');
+    const v=x.adopted===true?'y':x.adopted===false?'n':'u';
+    return '<div class="hist" data-m="'+x.month+'"><b>'+esc(x.month)+'</b>　'+al+
+      '<div class="r"><label><input type="radio" name="a'+x.month+'" value="y"'+(v==='y'?' checked':'')+'> 採納</label>'+
+      '<label><input type="radio" name="a'+x.month+'" value="n"'+(v==='n'?' checked':'')+'> 不採納</label>'+
+      '<label><input type="radio" name="a'+x.month+'" value="u"'+(v==='u'?' checked':'')+'> 未決定</label>'+
+      '<input type="text" data-reason placeholder="理由（讓助理記住我的偏好）" value="'+esc(x.reason||'')+'">'+
+      '<button class="danger" data-delH>刪除</button></div></div>';
+  }).join('')||'<p class="flat">還沒有紀錄。到「本月配置建議」按「儲存本月建議到紀錄」。</p>';
+}
+
+/* ---------- 事件綁定 ---------- */
+$('#nav').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-tab]');if(!b)return;
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id===b.dataset.tab));
+});
+$('#monthly').addEventListener('input',e=>{state.monthly=num(e.target.value);renderAll()});
+$('#threshold').addEventListener('input',e=>{state.threshold=num(e.target.value);renderAll()});
+$('#rFrom').addEventListener('change',e=>{state.range.from=e.target.value||state.range.from;renderAll()});
+$('#rTo').addEventListener('change',e=>{state.range.to=e.target.value||state.range.to;renderAll()});
+$('#resetDemo').addEventListener('click',()=>{state=demo();init()});
+$('#hBody').addEventListener('input',e=>{
+  const tr=e.target.closest('tr[data-id]');if(!tr||!e.target.dataset.f)return;
+  const h=state.holdings.find(x=>x.id===tr.dataset.id);
+  h[e.target.dataset.f]=['value','ret','target'].includes(e.target.dataset.f)?num(e.target.value):e.target.value;
+  renderStockSelect();renderAll();
+});
+$('#hBody').addEventListener('click',e=>{
+  if(!e.target.matches('[data-del]'))return;
+  const id=e.target.closest('tr').dataset.id;
+  state.holdings=state.holdings.filter(h=>h.id!==id);
+  renderHoldings();renderStockSelect();renderAll();
+});
+$('#addH').addEventListener('click',()=>{
+  state.holdings.push({id:uid(),name:'新持股',ticker:'',industry:'',value:0,ret:0,target:0});
+  renderHoldings();renderStockSelect();renderAll();
+});
+$('#normT').addEventListener('click',()=>{
+  const s=state.holdings.reduce((a,h)=>a+Math.max(0,num(h.target)),0);
+  if(!s)return;
+  state.holdings.forEach(h=>h.target=Math.round(Math.max(0,num(h.target))/s*1000)/10);
+  renderHoldings();renderAll();
+});
+$('#addE').addEventListener('click',()=>{
+  const title=$('#eTitle').value.trim(),reason=$('#eReason').value.trim(),stock=$('#eStock').value;
+  if(!stock){alert('請先到「持股設定」新增至少一檔持股');return}
+  if(!title||!reason){alert('請填寫新聞標題與一句話原因');return}
+  state.events.push({id:uid(),date:$('#eDate').value||ymd(new Date()),title,company:$('#eCompany').value.trim(),stock,rel:$('#eRel').value,verd:$('#eVerd').value,reason});
+  ['eTitle','eCompany','eReason'].forEach(i=>$('#'+i).value='');
+  renderAll();
+});
+$('#eList').addEventListener('click',e=>{
+  const id=e.target.dataset.delE;if(!id)return;
+  state.events=state.events.filter(x=>x.id!==id);renderAll();
+});
+$('#saveM').addEventListener('click',()=>{
+  const C=compute(),m=thisMonth(),alloc={};
+  C.rows.forEach(r=>alloc[r.h.id]=r.pct);
+  const old=state.history.find(x=>x.month===m);
+  if(old)old.alloc=alloc;else state.history.push({month:m,alloc,adopted:null,reason:''});
+  renderAll();
+  $('#saveMsg').textContent='已儲存 '+m+' 的建議，可到第 5 頁記錄是否採納。';
+});
+$('#hist').addEventListener('click',e=>{
+  if(!e.target.matches('[data-delH]'))return;
+  const m=e.target.closest('.hist').dataset.m;
+  state.history=state.history.filter(x=>x.month!==m);renderAll();
+});
+$('#hist').addEventListener('change',e=>{
+  const box=e.target.closest('.hist');if(!box||e.target.type!=='radio')return;
+  const x=state.history.find(y=>y.month===box.dataset.m);
+  x.adopted=e.target.value==='y'?true:e.target.value==='n'?false:null;
+  renderAll();
+});
+$('#hist').addEventListener('input',e=>{
+  if(!e.target.matches('[data-reason]'))return;
+  const x=state.history.find(y=>y.month===e.target.closest('.hist').dataset.m);
+  x.reason=e.target.value;save();
+});
+$('#hist').addEventListener('focusout',e=>{if(e.target.matches('[data-reason]'))renderAll()});
+$('#copyR').addEventListener('click',()=>{
+  const t=$('#report').textContent;
+  const done=()=>{$('#copyMsg').textContent='已複製，可以貼到 LINE 了。'};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,()=>fallback(t,done))}else fallback(t,done);
+});
+function fallback(t,cb){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');cb()}catch(e){}a.remove()}
+
+function init(){
+  $('#monthly').value=state.monthly;
+  $('#threshold').value=state.threshold;
+  $('#rFrom').value=state.range.from;
+  $('#rTo').value=state.range.to;
+  $('#eDate').value=ymd(new Date());
+  renderHoldings();renderStockSelect();renderAll();
+}
+init();
+})();
+</script>
+</body>
+</html>
