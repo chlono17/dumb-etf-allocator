@@ -71,6 +71,25 @@ pre{background:#1f2a37;color:#eef2f6;padding:14px;border-radius:10px;white-space
 .hist .r{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px}
 .hist .r input[type=text]{flex:1;min-width:200px}
 footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);font-size:.8rem}
+.intro{border-left:5px solid var(--accent)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:10px 0}
+.step{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.step b{display:block;margin-bottom:2px}
+.step .n{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;text-align:center;line-height:22px;font-size:.8rem;margin-right:6px}
+.guide{background:var(--brand-soft);color:#24435f;border-radius:10px;padding:9px 12px;font-size:.9rem;margin-bottom:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:#fff;color:var(--ink);border:1px solid var(--line);padding:5px 12px;border-radius:99px}
+.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+details.gl{margin-top:8px}
+details.gl summary{cursor:pointer;color:var(--brand);font-weight:600}
+details.gl dl{margin:8px 0 0}
+details.gl dt{font-weight:600;margin-top:6px}
+details.gl dd{margin:0;color:var(--muted);font-size:.88rem}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbar input[type=search]{flex:1;min-width:200px}
+.cnt{color:var(--muted);font-size:.84rem}
+.fh{font-weight:700;color:var(--brand);margin-top:6px}
+.hint{background:var(--bg);border-radius:8px;padding:8px 12px;font-size:.88rem}
 @media(max-width:600px){.head h1{font-size:1.1rem}.head svg{flex-basis:56px;width:56px;height:56px}}
 </style>
 </head>
@@ -95,11 +114,37 @@ footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);f
 </header>
 
 <main>
+  <div class="card intro" id="intro">
+    <h2>歡迎！這個網站可以幫你做什麼？</h2>
+    <p class="sub">給「每月定期定額、自己挑股票」的人用：你把看到的新聞標成長期利多、短期雜訊或長期利空，網站就幫你算出這個月每檔股票該投入多少錢。所有資料只存在你自己的瀏覽器，不會上傳。</p>
+    <div class="steps">
+      <div class="step"><b><span class="n">1</span>填持股</b>到「持股設定」輸入每檔的市值與你想要的目標比例。</div>
+      <div class="step"><b><span class="n">2</span>記新聞</b>到「新聞事件」記下和持股有關的新聞，並判斷是長期利多、短期雜訊還是長期利空。</div>
+      <div class="step"><b><span class="n">3</span>看建議</b>到「本月配置建議」查看每檔扣款比例，需要時複製週報貼到 LINE。</div>
+    </div>
+    <div class="row">
+      <button id="goStart">開始：先填持股</button>
+      <button class="ghost" id="loadDemo">載入範例資料看看效果</button>
+      <button class="ghost" id="hideIntro">收起說明</button>
+    </div>
+    <details class="gl"><summary>名詞說明（點開）</summary>
+      <dl>
+        <dt>長期利多／長期利空</dt><dd>會影響公司未來幾年賺錢能力的事，例如擴產、新技術、重大客戶。</dd>
+        <dt>短期雜訊</dt><dd>單日股價漲跌、情緒性報導，不需要因此改變配置。</dd>
+        <dt>上游／下游／競爭者</dt><dd>供應原料或設備給它的是上游，買它產品的是下游，搶同一塊市場的是競爭者。</dd>
+        <dt>目標比例與偏離</dt><dd>目標比例是你理想中每檔佔多少；偏離是現在的比例和目標差幾個百分點。</dd>
+        <dt>再平衡</dt><dd>比例走樣時把它拉回目標。這裡只用每月新資金補不足的，不會叫你賣出。</dd>
+      </dl>
+    </details>
+  </div>
+
   <div class="bar">
     <label>每月定期定額（NT$）<input type="number" id="monthly" min="0" step="500"></label>
     <label>再平衡門檻（偏離幾個百分點才調整）<input type="number" id="threshold" min="1" max="30" step="1"></label>
     <label>統計期間：起<input type="date" id="rFrom"></label>
     <label>統計期間：迄<input type="date" id="rTo"></label>
+    <label>快速選擇統計期間（只有期間內的新聞會影響建議）
+      <span class="chips" id="presets"><button class="chip" data-p="7">近 7 天</button><button class="chip" data-p="30">近 30 天</button><button class="chip" data-p="m">本月</button><button class="chip" data-p="all">全部</button></span></label>
     <button class="ghost" id="resetDemo">還原範例資料</button>
   </div>
 
@@ -109,10 +154,12 @@ footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);f
     <button data-tab="t3">3 本月配置建議</button>
     <button data-tab="t4">4 每週週報</button>
     <button data-tab="t5">5 採納紀錄與偏好</button>
+    <button type="button" class="chip" id="showIntro" hidden>? 使用說明</button>
   </nav>
 
   <!-- 1 持股 -->
   <section class="tab on" id="t1">
+    <div class="guide"><b>這一頁要做什麼：</b>告訴網站你現在有哪些股票、各佔多少錢，以及你理想中每檔想佔幾 %。填完後到第 2 頁記新聞。</div>
     <div class="card">
       <h2>目前持股與目標比例</h2>
       <p class="sub">這是「我自己的 ETF」：只放我理解、願意長期追蹤的公司。市值與報酬率由你手動填寫（範例數字為虛構）。</p>
@@ -120,32 +167,50 @@ footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);f
         <thead><tr><th>名稱</th><th>代號</th><th>所屬產業</th><th>目前市值 NT$</th><th>報酬率 %</th><th>目標比例 %</th><th>現比例</th><th></th></tr></thead>
         <tbody id="hBody"></tbody>
       </table></div>
-      <div class="row"><button id="addH">＋ 新增持股</button><button class="ghost" id="normT">目標比例正規化為 100%</button><span id="tSum"></span></div>
+      <div class="row"><button id="addH">＋ 新增持股</button><button class="ghost" id="normT">目標比例正規化為 100%</button><button class="ghost" id="clearH">清空持股</button><span id="tSum"></span></div>
       <div class="grid" id="stats"></div>
     </div>
   </section>
 
   <!-- 2 事件 -->
   <section class="tab" id="t2">
+    <div class="guide"><b>這一頁要做什麼：</b>看到和持股有關的新聞，就記一筆並下判斷。<b>先看最上面的「重點」</b>，它告訴你這些新聞目前怎麼改變配置；要新增新聞往下捲，不確定怎麼填就按「填入範例」。</div>
+    <div class="card" id="impactCard">
+      <h2>重點：這些新聞目前怎麼影響你的配置</h2>
+      <p class="sub">只計算「統計期間」內的事件。「目標微調」是指這檔本月想要的比例，會比你設定的目標多（或少）幾個百分點。</p>
+      <div id="impact"></div>
+      <div class="row"><button class="ghost" id="toAlloc">看本月配置建議 →</button></div>
+    </div>
     <div class="card">
       <h2>記錄一則新聞事件</h2>
-      <p class="sub">把新聞貼進來，標示它和哪檔持股有關、關係是什麼，再判斷是長期利多、短期雜訊還是長期利空。判斷由你決定，系統只負責整理與計分。</p>
+      <p class="sub">分三小步：寫下新聞、選它跟哪檔持股有關、下你的判斷。填完按「加入事件」，上方的「重點」區會立刻更新。</p>
       <div class="form">
+        <div class="wide fh">① 這是什麼新聞？</div>
         <label>日期<input type="date" id="eDate"></label>
         <label>新聞標題<input type="text" id="eTitle" placeholder="例：先進製程新廠動土"></label>
         <label>新聞中的公司<input type="text" id="eCompany" placeholder="例：艾司摩爾"></label>
+        <div class="wide fh">② 它跟你的哪檔持股有關？</div>
         <label>影響哪一檔持股<select id="eStock"></select></label>
         <label>該公司與持股的關係<select id="eRel">
           <option value="self">本身</option><option value="up">上游</option><option value="down">下游</option><option value="comp">競爭者</option></select></label>
+        <div class="wide fh">③ 你的判斷：這件事會影響這檔股票的長期嗎？</div>
         <label>長期判斷<select id="eVerd">
           <option value="bull">長期利多</option><option value="noise" selected>短期雜訊</option><option value="bear">長期利空</option></select></label>
         <label class="wide">一句話原因<input type="text" id="eReason" placeholder="例：擴產屬於未來三年產能決策，不是單日股價波動"></label>
-        <div class="wide"><button id="addE">加入事件</button></div>
+        <div class="wide hint" id="eHint"></div>
+        <div class="wide row" style="margin:0"><button id="addE">加入事件</button><button class="ghost" id="fillE" type="button">填入範例</button></div>
       </div>
     </div>
     <div class="card">
       <h2>事件清單</h2>
-      <p class="sub">灰色代表不在目前統計期間內，不會影響本月配置。</p>
+      <p class="sub">灰色代表不在統計期間內，不會影響本月配置。</p>
+      <div class="toolbar">
+        <input type="search" id="eSearch" placeholder="搜尋標題、公司、原因或持股名稱">
+        <span class="chips" id="eFilter">
+          <button class="chip on" data-v="all">全部</button><button class="chip" data-v="bull">長期利多</button><button class="chip" data-v="noise">短期雜訊</button><button class="chip" data-v="bear">長期利空</button><button class="chip" data-v="in">只看統計期間內</button>
+        </span>
+        <span class="cnt" id="eCount"></span>
+      </div>
       <div id="eList"></div>
     </div>
     <div class="card">
@@ -157,9 +222,11 @@ footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);f
 
   <!-- 3 配置 -->
   <section class="tab" id="t3">
+    <div class="guide"><b>這一頁要做什麼：</b>這頁不用填，看「本月扣款」那欄就是這個月每檔該投入的百分比與金額。滿意就按下方「儲存」，之後到第 5 頁記錄你有沒有採納。</div>
     <div class="card">
       <h2>本月扣款配置建議</h2>
       <p class="sub">邏輯：目標比例 ＋ 統計期間內的事件微調（長期利多加碼、利空減碼，最多 ±6 個百分點）→ 只用新資金補不足的部分，不賣出，避免過度交易。</p>
+      <div class="toolbar"><span class="cnt">排序：</span><span class="chips" id="aSort"><button class="chip on" data-s="orig">依持股順序</button><button class="chip" data-s="pct">扣款比例高到低</button></span></div>
       <div id="allocNote"></div>
       <div class="tablewrap"><table>
         <thead><tr><th>持股</th><th>現比例</th><th>調整後目標</th><th>偏離</th><th>本月扣款</th><th>金額 NT$</th><th>較上月</th><th>理由</th></tr></thead>
@@ -175,16 +242,18 @@ footer{max-width:1080px;margin:0 auto;padding:6px 16px 30px;color:var(--muted);f
 
   <!-- 4 週報 -->
   <section class="tab" id="t4">
+    <div class="guide"><b>這一頁要做什麼：</b>這是自動整理好的文字週報。按「複製」貼到 LINE 給自己，或下載成文字檔存起來。</div>
     <div class="card">
       <h2>每週產業週報（純文字，可貼到 LINE）</h2>
       <p class="sub">內容依統計期間內的事件、本月配置建議與追蹤名單自動整理。</p>
-      <div class="row"><button id="copyR">複製週報文字</button><span class="sub" id="copyMsg" style="margin:0"></span></div>
+      <div class="row"><button id="copyR">複製週報文字</button><button class="ghost" id="dlR">下載成 .txt</button><span class="sub" id="copyMsg" style="margin:0"></span></div>
       <pre id="report"></pre>
     </div>
   </section>
 
   <!-- 5 紀錄 -->
   <section class="tab" id="t5">
+    <div class="guide"><b>這一頁要做什麼：</b>每個月回來標記「這份建議我採納了嗎」並寫下理由，網站會統計採納率，並記住你不採納的原因。需要先在第 3 頁按「儲存」才會出現紀錄。</div>
     <div class="card">
       <h2>採納紀錄</h2>
       <p class="sub">每個月記錄這份建議我採不採納，並寫下理由，讓助理慢慢學會我的偏好。</p>
@@ -240,6 +309,7 @@ function load(){
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 let state=load();
+const ui={q:'',v:'all',inOnly:false,sort:'orig'};
 
 /* ---------- 計算核心 ---------- */
 function inRange(e){return e.date>=state.range.from&&e.date<=state.range.to}
@@ -334,13 +404,26 @@ function renderAll(){
     '<div class="stat"><b>'+(wRet>=0?'+':'')+wRet.toFixed(1)+'%</b><span>加權報酬率</span></div>'+
     '<div class="stat"><b>'+state.holdings.length+' 檔</b><span>持股數</span></div>';
   // 事件
-  const ev=state.events.slice().sort((a,b)=>a.date<b.date?1:-1);
+  const evAll=state.events.slice().sort((a,b)=>a.date<b.date?1:-1);
+  const q=ui.q.trim().toLowerCase();
+  const ev=evAll.filter(e=>{
+    const hh=state.holdings.find(x=>x.id===e.stock);
+    const text=(e.title+' '+e.company+' '+e.reason+' '+(hh?hh.name:'')).toLowerCase();
+    return (!q||text.includes(q))&&(ui.v==='all'||e.verd===ui.v)&&(!ui.inOnly||inRange(e));
+  });
+  $('#eCount').textContent='顯示 '+ev.length+' / '+evAll.length+' 則';
+  $('#impact').innerHTML=C.rows.map(r=>{
+    const n=v=>r.mine.filter(e=>e.verd===v).length;
+    const cls=r.tilt>0?'up':r.tilt<0?'down':'flat';
+    const txt=r.mine.length?('目標微調 <b class="'+cls+'">'+(r.tilt>=0?'+':'')+r.tilt.toFixed(1)+' 點</b>'):'<span class="flat">期間內沒有新聞，目標不調整</span>';
+    return '<div class="ev"><div><div class="t">'+esc(r.h.name)+'</div><small>期間內：長期利多 '+n('bull')+' 則、短期雜訊 '+n('noise')+' 則、長期利空 '+n('bear')+' 則</small></div><div>'+txt+'</div></div>';
+  }).join('')||'<p class="flat">還沒有持股，請先到第 1 頁新增。</p>';
   $('#eList').innerHTML=ev.map(e=>{
     const h=state.holdings.find(x=>x.id===e.stock);
     return '<div class="ev'+(inRange(e)?'':' dim')+'"><div><div class="t">'+tag(e.verd)+' '+esc(e.title)+'</div>'+
       '<small>'+esc(e.date)+'｜'+esc(e.company||'—')+' → '+esc(h?h.name:'（已刪除持股）')+' <span class="tag rel">'+REL[e.rel].label+'</span></small><div>'+esc(e.reason)+'</div></div>'+
       '<button class="danger" data-delE="'+e.id+'">刪除</button></div>';
-  }).join('')||'<p class="flat">還沒有事件。</p>';
+  }).join('')||'<p class="flat">'+(evAll.length?'沒有符合搜尋或篩選條件的事件。':'還沒有事件，請在上方新增，或按「填入範例」。')+'</p>';
   const W=watchlist(C.evs);
   $('#watch').innerHTML=W.length?W.map(w=>'<div class="ev"><div><div class="t">'+esc(w.company)+'</div><small>與 '+esc(Object.keys(w.links).join('、'))+' 有關｜期間出現 '+w.n+' 次（利多 '+w.bull+'、利空 '+w.bear+'）</small></div></div>').join(''):'<p class="flat">目前期間內沒有新的公司需要追蹤。</p>';
   // 配置
@@ -350,7 +433,7 @@ function renderAll(){
   const over=C.rows.filter(r=>Math.abs(r.drift)>C.thr);
   note.push(over.length?'<div class="warn">有 '+over.length+' 檔偏離目標超過 '+C.thr+' 個百分點：'+over.map(r=>esc(r.h.name)).join('、')+'。建議這一季檢視一次是否調整目標。</div>':'<div class="ok">所有持股都在 ±'+C.thr+' 個百分點內，維持定期定額即可，不需要大動作。</div>');
   $('#allocNote').innerHTML=note.join('');
-  $('#aBody').innerHTML=C.rows.map(r=>{
+  $('#aBody').innerHTML=(ui.sort==='pct'?C.rows.slice().sort((a,b)=>b.pct-a.pct):C.rows).map(r=>{
     const d=r.delta==null?'<span class="flat">—</span>':r.delta>0?'<span class="up">+'+r.delta+'%</span>':r.delta<0?'<span class="down">'+r.delta+'%</span>':'<span class="flat">0%</span>';
     return '<tr><td><b>'+esc(r.h.name)+'</b><br><small class="flat">'+esc(r.h.ticker)+'</small></td>'+
       '<td>'+r.cur.toFixed(1)+'%</td><td>'+r.adj.toFixed(1)+'%</td>'+
@@ -494,13 +577,68 @@ $('#copyR').addEventListener('click',()=>{
 });
 function fallback(t,cb){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');cb()}catch(e){}a.remove()}
 
+function setIntro(hidden){
+  $('#intro').hidden=hidden;$('#showIntro').hidden=!hidden;
+  try{localStorage.setItem('dumb-etf-intro',hidden?'1':'0')}catch(e){}
+}
+function goTab(t){document.querySelector('[data-tab='+t+']').click();document.getElementById(t).scrollIntoView({behavior:'smooth',block:'start'})}
+$('#hideIntro').addEventListener('click',()=>setIntro(true));
+$('#showIntro').addEventListener('click',()=>{setIntro(false);window.scrollTo({top:0,behavior:'smooth'})});
+$('#goStart').addEventListener('click',()=>goTab('t1'));
+$('#loadDemo').addEventListener('click',()=>{state=demo();init();goTab('t3')});
+$('#clearH').addEventListener('click',()=>{
+  if(!confirm('確定要清空所有持股嗎？'))return;
+  state.holdings=[];renderHoldings();renderStockSelect();renderAll();
+});
+$('#presets').addEventListener('click',e=>{
+  const b=e.target.closest('[data-p]');if(!b)return;
+  const p=b.dataset.p,t=new Date();let from;
+  if(p==='7')from=daysAgo(6);else if(p==='30')from=daysAgo(29);
+  else if(p==='m')from=ymd(new Date(t.getFullYear(),t.getMonth(),1));else from='2000-01-01';
+  state.range={from,to:daysAgo(0)};
+  $('#rFrom').value=from;$('#rTo').value=state.range.to;renderAll();
+});
+$('#eSearch').addEventListener('input',e=>{ui.q=e.target.value;renderAll()});
+$('#eFilter').addEventListener('click',e=>{
+  const b=e.target.closest('[data-v]');if(!b)return;
+  if(b.dataset.v==='in'){ui.inOnly=!ui.inOnly;b.classList.toggle('on',ui.inOnly)}
+  else{ui.v=b.dataset.v;document.querySelectorAll('#eFilter [data-v]:not([data-v=in])').forEach(x=>x.classList.toggle('on',x===b))}
+  renderAll();
+});
+$('#aSort').addEventListener('click',e=>{
+  const b=e.target.closest('[data-s]');if(!b)return;
+  ui.sort=b.dataset.s;document.querySelectorAll('#aSort [data-s]').forEach(x=>x.classList.toggle('on',x===b));renderAll();
+});
+function updHint(){
+  const w={self:1,up:.6,down:.6,comp:.6}[$('#eRel').value],s={bull:1,noise:0,bear:-1}[$('#eVerd').value];
+  const t=Math.round(s*w*2*10)/10;
+  $('#eHint').textContent=s===0?'短期雜訊：不會改變這檔的配置，只是記錄下來提醒自己不要被它影響。':
+    '照這個選擇，這檔本月的目標比例會微調 '+(t>0?'+':'')+t+' 個百分點（最多累積 ±6 點）。';
+}
+$('#eVerd').addEventListener('change',updHint);
+$('#eRel').addEventListener('change',updHint);
+$('#toAlloc').addEventListener('click',()=>goTab('t3'));
+$('#fillE').addEventListener('click',()=>{
+  $('#eTitle').value='宣布擴建先進封裝產能';$('#eCompany').value='台積電';
+  $('#eRel').value='self';$('#eVerd').value='bull';
+  $('#eReason').value='擴產是未來數年的產能決策，屬長期影響，不是單日股價波動';
+  updHint();
+});
+$('#dlR').addEventListener('click',()=>{
+  const blob=new Blob([$('#report').textContent],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='呆萌週報.txt';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+
 function init(){
+  let hid=false;try{hid=localStorage.getItem('dumb-etf-intro')==='1'}catch(e){}
+  $('#intro').hidden=hid;$('#showIntro').hidden=!hid;
   $('#monthly').value=state.monthly;
   $('#threshold').value=state.threshold;
   $('#rFrom').value=state.range.from;
   $('#rTo').value=state.range.to;
   $('#eDate').value=ymd(new Date());
-  renderHoldings();renderStockSelect();renderAll();
+  renderHoldings();renderStockSelect();renderAll();updHint();
 }
 init();
 })();
